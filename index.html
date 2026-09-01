@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Scouter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+  <style>
+    :root {
+      --bg:          #0F0D18;
+      --surface:     #1A1728;
+      --surface-2:   #241F3A;
+      --surface-3:   #2E2850;
+      --accent:      #A67EEA;
+      --accent-warm: #F08C5A;
+      --accent-dim:  rgba(166,126,234,0.12);
+      --green:       #6EE7B7;
+      --text:        #EDE8FA;
+      --text-muted:  #7A6FA0;
+      --border:      #2E2850;
+      --code-bg:     #0A0817;
+      --sidebar-w:   280px;
+      --topbar-h:    54px;
+      --radius:      8px;
+      --shadow:      0 8px 32px rgba(0,0,0,0.5);
+      --font-head:   'Space Grotesk', system-ui, sans-serif;
+      --font-body:   'Inter', system-ui, sans-serif;
+      --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.78;
+      min-height: 100vh;
+    }
+
+    /* ─── TOP BAR ─── */
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      height: var(--topbar-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px;
+      z-index: 200;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+    }
+    .topbar-brand {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      flex: 1;
+    }
+    .topbar-brand em { color: var(--text-muted); font-style: normal; font-weight: 400; }
+    .topbar-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* ─── DOC TOGGLE ─── */
+    .doc-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .toggle-btn {
+      background: none;
+      border: none;
+      font-family: var(--font-head);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 4px 14px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .toggle-btn + .toggle-btn { border-left: 1px solid var(--border); }
+    .toggle-btn:hover:not(.active) { background: var(--surface-2); color: var(--text); }
+    .toggle-btn.active { background: var(--accent); color: #fff; }
+    #menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: background 0.15s;
+    }
+    #menu-btn:hover { background: var(--surface-2); }
+
+    /* ─── LAYOUT ─── */
+    .layout {
+      display: flex;
+      padding-top: var(--topbar-h);
+      min-height: 100vh;
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      position: fixed;
+      top: var(--topbar-h);
+      left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--topbar-h));
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 100;
+      transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+    }
+    .sidebar-head {
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sidebar-label {
+      font-family: var(--font-head);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    #sidebar-close {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .ctrl-row {
+      display: flex;
+      gap: 6px;
+    }
+    .ctrl-btn {
+      flex: 1;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 5px 6px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .ctrl-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+    #nav-content {
+      overflow-y: auto;
+      overflow-x: hidden;
+      flex: 1;
+      padding: 10px 0 24px;
+    }
+    #nav-content::-webkit-scrollbar { width: 3px; }
+    #nav-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .nav-date-group { margin-bottom: 2px; }
+
+    .nav-date-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 8px 14px;
+      font-family: var(--font-head);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--accent-warm);
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .nav-date-btn:hover { background: var(--surface-2); }
+
+    .nav-session-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      border-left: 2px solid transparent;
+      padding: 5px 14px 5px 22px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      line-height: 1.45;
+      transition: all 0.12s;
+    }
+    .nav-session-btn:hover {
+      color: var(--text);
+      background: var(--surface-2);
+      border-left-color: var(--accent);
+    }
+    .nav-session-btn.active {
+      color: var(--accent);
+      background: var(--accent-dim);
+      border-left-color: var(--accent);
+    }
+
+    /* ─── MAIN ─── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 40px 52px 100px;
+      max-width: calc(var(--sidebar-w) + 860px);
+    }
+
+    /* ─── LOADING STATE ─── */
+    #loading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 60px 0;
+    }
+    #loading::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #error {
+      display: none;
+      color: #f87171;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.3);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-top: 40px;
+    }
+
+    /* ─── RENDERED MARKDOWN ─── */
+    #rendered h1 {
+      font-family: var(--font-head);
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.03em;
+      padding-bottom: 16px;
+      margin-bottom: 32px;
+      border-bottom: 2px solid var(--border);
+      scroll-margin-top: calc(var(--topbar-h) + 16px);
+    }
+    #rendered h2 {
+      font-family: var(--font-head);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-warm);
+      letter-spacing: 0em;
+      margin: 52px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      scroll-margin-top: calc(var(--topbar-h) + 16px);
+    }
+    #rendered h4 {
+      font-family: var(--font-head);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--green);
+      margin: 22px 0 6px;
+      scroll-margin-top: calc(var(--topbar-h) + 16px);
+    }
+    #rendered h5 {
+      font-family: var(--font-head);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 18px 0 6px;
+    }
+    #rendered p  { margin: 0 0 10px; }
+    #rendered ul, #rendered ol { margin: 6px 0 12px 22px; }
+    #rendered li { margin-bottom: 4px; }
+    #rendered li > ul, #rendered li > ol { margin-top: 4px; margin-bottom: 0; }
+
+    #rendered strong { color: var(--text); font-weight: 600; }
+    #rendered em     { color: var(--text-muted); font-style: italic; }
+    #rendered a      { color: var(--accent); text-decoration: none; }
+    #rendered a:hover{ text-decoration: underline; }
+
+    #rendered hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    #rendered blockquote {
+      border-left: 3px solid var(--accent);
+      margin: 14px 0;
+      padding: 8px 16px;
+      background: var(--surface);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: var(--text-muted);
+    }
+
+    #rendered code {
+      font-family: var(--font-mono);
+      font-size: 0.8em;
+      background: var(--surface-2);
+      color: var(--green);
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    #rendered pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      overflow-x: auto;
+      margin: 10px 0 14px;
+    }
+    #rendered pre code {
+      background: none;
+      padding: 0;
+      color: var(--text);
+      font-size: 0.78em;
+      line-height: 1.65;
+      white-space: pre;
+    }
+    #rendered pre::-webkit-scrollbar { height: 3px; }
+    #rendered pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    #rendered table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.88em; }
+    #rendered th {
+      background: var(--surface-2);
+      color: var(--accent);
+      font-family: var(--font-head);
+      font-size: 0.78em;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 9px 12px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+    }
+    #rendered td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+    #rendered tr:hover td { background: var(--surface); color: var(--text); }
+
+    /* ─── COLLAPSIBLE SESSIONS ─── */
+    .session-block {
+      margin: 18px 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .session-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 13px 18px;
+      background: var(--surface);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+      scroll-margin-top: calc(var(--topbar-h) + 16px);
+    }
+    .session-header:hover { background: var(--surface-2); }
+    .session-header h3 {
+      font-family: var(--font-head);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: -0.01em;
+      line-height: 1.4;
+      flex: 1;
+      margin: 0;
+      scroll-margin-top: calc(var(--topbar-h) + 16px);
+    }
+    .chevron {
+      color: var(--text-muted);
+      font-size: 10px;
+      flex-shrink: 0;
+      margin-top: 5px;
+      font-style: normal;
+    }
+
+    .session-body {
+      display: none;
+      padding: 20px 24px 24px;
+      border-top: 1px solid var(--border);
+    }
+    .session-block.open .session-body { display: block; }
+    .session-block.open .chevron::before { content: '▼'; }
+    .session-block:not(.open) .chevron::before { content: '▶'; }
+
+    /* ─── BACK TO TOP ─── */
+    #back-top {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 40px;
+      height: 40px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 17px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 150;
+    }
+    #back-top.visible { opacity: 1; transform: translateY(0); }
+    #back-top:hover { background: var(--text); color: var(--bg); }
+
+    /* ─── OVERLAY (mobile) ─── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 90;
+    }
+    .overlay.show { display: block; }
+
+    /* ─── MOBILE ─── */
+    @media (max-width: 768px) {
+      #menu-btn    { display: flex; align-items: center; }
+      #sidebar-close { display: block; }
+      .topbar-tag  { display: none; }
+      .sidebar { transform: translateX(-100%); box-shadow: var(--shadow); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; padding: 24px 18px 80px; }
+      #rendered h1 { font-size: 1.4rem; }
+      #rendered h2 { font-size: 1.05rem; }
+    }
+
+    .katex { font-size: 0.98em; }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <button id="menu-btn" aria-label="Open sidebar">&#9776;</button>
+  <div class="topbar-brand">&#x1F431; Project Scouter</div>
+  <div class="doc-toggle">
+    <button class="toggle-btn" id="btn-instructions">Instructions</button>
+    <button class="toggle-btn" id="btn-devlog">Dev Log</button>
+  </div>
+  <div class="topbar-tag">UE5 &#x2022; Maya &#x2022; VR</div>
+</header>
+
+<!-- MOBILE OVERLAY -->
+<div class="overlay" id="overlay"></div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-label">
+        Sessions
+        <button id="sidebar-close" aria-label="Close sidebar">&#x2715;</button>
+      </div>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" id="expand-all">&#9660; Expand All</button>
+        <button class="ctrl-btn" id="collapse-all">&#9654; Collapse All</button>
+      </div>
+    </div>
+    <nav id="nav-content" aria-label="Session navigation"></nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main" role="main">
+    <div id="loading">Loading&hellip;</div>
+    <div id="error"></div>
+    <div id="rendered"></div>
+  </main>
+
+</div>
+
+<!-- BACK TO TOP -->
+<button id="back-top" aria-label="Back to top">&#8593;</button>
+
+<!-- ═══════════════ LIBRARIES ═══════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+<!-- ═══════════════ APP SCRIPT ═══════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── CONTROLS & MOBILE SIDEBAR (no content dependency) ── */
+  var sidebar  = document.getElementById('sidebar');
+  var overlay  = document.getElementById('overlay');
+  var menuBtn  = document.getElementById('menu-btn');
+  var closeBtn = document.getElementById('sidebar-close');
+  var backBtn  = document.getElementById('back-top');
+
+  function openSidebar()        { sidebar.classList.add('open');    overlay.classList.add('show'); }
+  function closeSidebarMobile() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+
+  menuBtn.addEventListener('click', openSidebar);
+  closeBtn.addEventListener('click', closeSidebarMobile);
+  overlay.addEventListener('click', closeSidebarMobile);
+
+  backBtn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+
+  document.getElementById('expand-all').addEventListener('click',   function () { toggleAll(true);  });
+  document.getElementById('collapse-all').addEventListener('click', function () { toggleAll(false); });
+
+  function toggleAll(expand) {
+    document.querySelectorAll('.session-block').forEach(function (b) {
+      b.classList.toggle('open', expand);
+    });
+  }
+
+  function updateActive() {
+    var blocks  = document.querySelectorAll('.session-block');
+    var current = null;
+    blocks.forEach(function (b) {
+      if (b.getBoundingClientRect().top < 100) current = b.id;
+    });
+    document.querySelectorAll('.nav-session-btn').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.blockId === current);
+    });
+  }
+
+  window.addEventListener('scroll', function () {
+    backBtn.classList.toggle('visible', window.scrollY > 500);
+    updateActive();
+  }, { passive: true });
+
+  /* ── CONTENT-DEPENDENT INIT — runs after fetch resolves ── */
+  function init(raw) {
+    var loadingEl = document.getElementById('loading');
+    var container = document.getElementById('rendered');
+
+    /* 1. Render Markdown */
+    marked.setOptions({ gfm: true, breaks: false });
+    container.innerHTML = marked.parse(raw);
+    loadingEl.style.display = 'none';
+
+    /* 2. Tag all headings with stable IDs */
+    container.querySelectorAll('h1,h2,h3,h4,h5').forEach(function (h, i) {
+      h.id = 'h' + i;
+    });
+
+    /* 3. Make h3 sessions collapsible */
+    Array.from(container.querySelectorAll('h3')).forEach(function (h3) {
+      var originalParent = h3.parentNode;
+      var originalNext   = h3.nextSibling;
+
+      var block = document.createElement('div');
+      block.className = 'session-block open';
+      block.id = 'block-' + h3.id;
+
+      var hdr = document.createElement('div');
+      hdr.className = 'session-header';
+
+      var chev = document.createElement('i');
+      chev.className = 'chevron';
+      chev.setAttribute('aria-hidden', 'true');
+
+      var body = document.createElement('div');
+      body.className = 'session-body';
+
+      hdr.appendChild(chev);
+      hdr.appendChild(h3);
+      block.appendChild(hdr);
+      block.appendChild(body);
+
+      originalParent.insertBefore(block, originalNext);
+
+      /* Collect siblings until next h2 or h3 */
+      var next = block.nextSibling;
+      while (next && !['H1', 'H2', 'H3'].includes(next.nodeName)) {
+        var toMove = next;
+        next = next.nextSibling;
+        body.appendChild(toMove);
+      }
+
+      hdr.addEventListener('click', function () { block.classList.toggle('open'); });
+    });
+
+    /* 4. Build sidebar nav */
+    var nav = document.getElementById('nav-content');
+    Array.from(container.querySelectorAll('h2')).forEach(function (h2) {
+      var group   = document.createElement('div');
+      group.className = 'nav-date-group';
+
+      var datebtn = document.createElement('button');
+      datebtn.className = 'nav-date-btn';
+      datebtn.textContent = h2.textContent;
+      datebtn.addEventListener('click', function () {
+        h2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        closeSidebarMobile();
+      });
+      group.appendChild(datebtn);
+
+      var el = h2.nextElementSibling;
+      while (el && el.tagName !== 'H2') {
+        if (el.classList && el.classList.contains('session-block')) {
+          var h3 = el.querySelector('h3');
+          if (h3) {
+            var sbtn = document.createElement('button');
+            sbtn.className = 'nav-session-btn';
+            sbtn.textContent = h3.textContent
+              .replace('🔍 Focus: ', '')
+              .replace('🔍 ', '')
+              .trim();
+            sbtn.dataset.blockId = el.id;
+            sbtn.dataset.h3Id    = h3.id;
+            (function (block, heading, btn) {
+              btn.addEventListener('click', function () {
+                if (!block.classList.contains('open')) block.classList.add('open');
+                heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                closeSidebarMobile();
+              });
+            }(el, h3, sbtn));
+            group.appendChild(sbtn);
+          }
+        }
+        el = el.nextElementSibling;
+      }
+      nav.appendChild(group);
+    });
+
+    /* 5. Render KaTeX math */
+    if (typeof renderMathInElement === 'function') {
+      renderMathInElement(container, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true  },
+          { left: '$',  right: '$',  display: false }
+        ],
+        throwOnError: false
+      });
+    }
+  }
+
+  /* ── TOGGLE ── */
+  var btnInstructions = document.getElementById('btn-instructions');
+  var btnDevlog       = document.getElementById('btn-devlog');
+
+  function setActive(btn) {
+    [btnInstructions, btnDevlog].forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+
+  /* ── LOAD FILE ── */
+  function loadFile(path) {
+    var loadingEl = document.getElementById('loading');
+    var errEl     = document.getElementById('error');
+    var container = document.getElementById('rendered');
+
+    container.innerHTML = '';
+    document.getElementById('nav-content').innerHTML = '';
+    errEl.style.display     = 'none';
+    loadingEl.style.display = 'flex';
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    fetch(path)
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' — ' + r.statusText);
+        return r.text();
+      })
+      .then(function (text) { init(text.trim()); })
+      .catch(function (err) {
+        loadingEl.style.display = 'none';
+        errEl.style.display     = 'block';
+        errEl.textContent       = '⚠ Could not load ' + path + ': ' + err.message
+          + '\n\nServe this file over HTTP (e.g. python3 -m http.server) — fetch() does not work on file:// URLs.';
+      });
+  }
+
+  btnInstructions.addEventListener('click', function () {
+    setActive(btnInstructions);
+    loadFile('metadata/instructions.md');
+  });
+  btnDevlog.addEventListener('click', function () {
+    setActive(btnDevlog);
+    loadFile('metadata/devlog.md');
+  });
+
+  /* ── DEFAULT: Instructions ── */
+  setActive(btnInstructions);
+  loadFile('metadata/instructions.md');
+
+})();
+</script>
+</body>
+</html>
